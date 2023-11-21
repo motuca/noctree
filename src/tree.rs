@@ -7,7 +7,7 @@ use crate::{
     octant::{Octant, OctantType},
     octant_id::Id,
     sign::Sign,
-    util::Half,
+    util::{Half, Abs, NonNegative}, error::{OutOfRangeError, NegativeRangeError},
 };
 
 /// # Generic parameters
@@ -106,7 +106,34 @@ where
         + Half
         + Copy,
 {
+    let Octant { center, ranges, octant_type } = original;
+    let points = match octant_type {
+        OctantType::Leaf { points } => points,
+        OctantType::Node => unreachable!("Octant is a node"),
+    };
 
+    for point in points {
+        let signs = position_to_octant(&center, &ranges, &point);
+        let id = Id::from_depth_and_signs(&[0; N], signs[0], signs[1], signs[2]);
+        let octant = tree.entry(id).or_insert_with(|| {
+            let (center, ranges) = range_and_center_for_octant(center,ranges, signs);
+            Octant {
+                center,
+                ranges,
+                octant_type: OctantType::Leaf { points: Vec::new() },
+            }
+        });
+        match octant.points_mut() {
+            Some(points) => {
+                // Octant is a leaf
+                points.push(point);
+            },
+            None => {
+                // Octant is a node
+                unreachable!("New octant cannot be a node")
+            },
+        }
+    }
 }
 
 impl<T, const N: usize> Octree<T, N>
@@ -114,7 +141,7 @@ where
     T: Mul
         + Div
         + Add
-        + Sub
+        + Sub<Output = T>
         + AddAssign
         + SubAssign
         + MulAssign
@@ -122,9 +149,33 @@ where
         + PartialEq
         + PartialOrd
         + Half
+        + Abs
+        + NonNegative
         + Copy,
 {
-    pub fn push(&mut self, point: [T; 3]) {
+    pub fn new(center: [T; 3], ranges: [T; 3], threshold: usize) -> Result<Self, NegativeRangeError> {
+        // Range must be positive
+        for i in 0..3 {
+            if !ranges[i].is_non_negative() {
+                return Err(NegativeRangeError);
+            }
+        }
+
+        Ok(Self {
+            center,
+            ranges,
+            threshold,
+            tree: HashMap::new(),
+        })
+    }
+
+    pub fn push(&mut self, point: [T; 3]) -> Result<(), OutOfRangeError> {
+        for i in 0..3 {
+            if Abs::abs(&point[i]) - Abs::abs(&self.center[i]) > self.ranges[i].half() {
+                return Err(OutOfRangeError);
+            }
+        }
+
         let mut center = self.center;
         let mut ranges = self.ranges;
         loop {
@@ -151,9 +202,11 @@ where
                             ranges: octant.ranges,
                             octant_type: OctantType::Node,
                         };
+                        center = node.center;
+                        ranges = node.ranges;
+
                         let original = std::mem::replace(octant, node);
                         split_octant_to_next_depth(original, &mut self.tree);
-                        todo!()
                     }
                 },
                 None => {
@@ -163,5 +216,68 @@ where
                 },
             }
         }
+
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Octree;
+
+    const CENTER: [f32; 3] = [0.0, 0.0, 0.0];
+
+    /// Points have to be within +/- 5.0 of the center
+    const RANGES: [f32; 3] = [10.0, 10.0, 10.0];
+
+    const NEGATIVE_RANGES: [f32; 3] = [-10.0, -10.0, -10.0];
+
+    const THRESHOLD: usize = 10;
+
+    #[test]
+    fn create_octree_with_positive_range_returns_ok() {
+        let result = Octree::<_, 3>::new(CENTER, RANGES, THRESHOLD);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn create_octree_with_negative_range_returns_error() {
+        let result = Octree::<_, 3>::new(CENTER, NEGATIVE_RANGES, THRESHOLD);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn octree_can_push_points_within_range() {
+        let mut tree = Octree::<_, 3>::new(CENTER, RANGES, THRESHOLD).unwrap();
+        let result = tree.push([0.5, 0.5, 0.5]);
+        assert!(result.is_ok());
+
+        let result = tree.push([5.0, 5.0, 5.0]);
+        assert!(result.is_ok());
+
+        let result = tree.push([-5.0, -5.0, -5.0]);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn octree_cannot_push_points_outside_range() {
+        let mut tree = Octree::<_, 3>::new(CENTER, RANGES, THRESHOLD).unwrap();
+        let result = tree.push([10.5, 0.5, 0.5]);
+        assert!(result.is_err());
+
+        let result = tree.push([-10.5, 0.5, 0.5]);
+        assert!(result.is_err());
+
+        let result = tree.push([0.5, 10.5, 0.5]);
+        assert!(result.is_err());
+
+        let result = tree.push([0.5, -10.5, 0.5]);
+        assert!(result.is_err());
+
+        let result = tree.push([0.5, 0.5, 10.5]);
+        assert!(result.is_err());
+
+        let result = tree.push([0.5, 0.5, -10.5]);
+        assert!(result.is_err());
     }
 }

@@ -1,4 +1,4 @@
-use crate::{sign::Sign, error::MaxDepthReached};
+use crate::sign::Sign;
 
 const X_MASK: u8 = 0b0000_0100;
 const Y_MASK: u8 = 0b0000_0010;
