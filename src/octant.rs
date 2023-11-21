@@ -18,26 +18,26 @@ impl<T> Octant<T> {
         }
     }
 
-    pub fn is_leaf(&self) -> bool {
-        match self {
-            Octant::Node(_) => false,
-            Octant::Leaf(_) => true,
-        }
-    }
+    // pub fn is_leaf(&self) -> bool {
+    //     match self {
+    //         Octant::Node(_) => false,
+    //         Octant::Leaf(_) => true,
+    //     }
+    // }
 
-    pub fn is_node(&self) -> bool {
-        match self {
-            Octant::Node(_) => true,
-            Octant::Leaf(_) => false,
-        }
-    }
+    // pub fn is_node(&self) -> bool {
+    //     match self {
+    //         Octant::Node(_) => true,
+    //         Octant::Leaf(_) => false,
+    //     }
+    // }
 
-    pub fn points(&self) -> Option<&Vec<[T; 3]>> {
-        match self {
-            Octant::Node(_) => None,
-            Octant::Leaf(leaf) => Some(&leaf.points),
-        }
-    }
+    // pub fn points(&self) -> Option<&Vec<[T; 3]>> {
+    //     match self {
+    //         Octant::Node(_) => None,
+    //         Octant::Leaf(leaf) => Some(&leaf.points),
+    //     }
+    // }
 
     pub fn points_mut(&mut self) -> Option<&mut Vec<[T; 3]>> {
         match self {
