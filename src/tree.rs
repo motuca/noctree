@@ -4,7 +4,7 @@ use std::{
 };
 
 use crate::{
-    octant::{Octant, OctantType},
+    octant::{Octant, Leaf, Node},
     octant_id::Id,
     sign::Sign,
     util::{Half, Abs, NonNegative}, error::{OutOfRangeError, NegativeRangeError},
@@ -106,10 +106,9 @@ where
         + Half
         + Copy,
 {
-    let Octant { center, ranges, octant_type } = original;
-    let points = match octant_type {
-        OctantType::Leaf { points } => points,
-        OctantType::Node => unreachable!("Octant is a node"),
+    let (center, ranges, points) = match original {
+        Octant::Leaf(leaf) => (leaf.center, leaf.ranges, leaf.points),
+        Octant::Node(_) => unreachable!("Octant is a node"),
     };
 
     for point in points {
@@ -117,11 +116,12 @@ where
         let id = Id::from_depth_and_signs(&[0; N], signs[0], signs[1], signs[2]);
         let octant = tree.entry(id).or_insert_with(|| {
             let (center, ranges) = range_and_center_for_octant(center,ranges, signs);
-            Octant {
+            let leaf = Leaf {
                 center,
                 ranges,
-                octant_type: OctantType::Leaf { points: Vec::new() },
-            }
+                points: Vec::new(),
+            };
+            Octant::Leaf(leaf)
         });
         match octant.points_mut() {
             Some(points) => {
@@ -183,11 +183,12 @@ where
             let id = Id::from_depth_and_signs(&[0; N], signs[0], signs[1], signs[2]);
             let octant = self.tree.entry(id).or_insert_with(|| {
                 let (center, ranges) = range_and_center_for_octant(center,ranges, signs);
-                Octant {
+                let leaf = Leaf {
                     center,
                     ranges,
-                    octant_type: OctantType::Leaf { points: Vec::new() },
-                }
+                    points: Vec::new(),
+                };
+                Octant::Leaf(leaf)
             });
 
             match octant.points_mut() {
@@ -197,13 +198,13 @@ where
                         points.push(point);
                         break;
                     } else {
-                        let node = Octant {
-                            center: octant.center,
-                            ranges: octant.ranges,
-                            octant_type: OctantType::Node,
+                        let node = Node {
+                            center: *octant.center(),
+                            ranges: *octant.ranges(),
                         };
-                        center = node.center;
-                        ranges = node.ranges;
+                        let node = Octant::Node(node);
+                        center = *node.center();
+                        ranges = *node.ranges();
 
                         let original = std::mem::replace(octant, node);
                         split_octant_to_next_depth(original, &mut self.tree);
@@ -211,13 +212,21 @@ where
                 },
                 None => {
                     // Octant is a node
-                    center = octant.center;
-                    ranges = octant.ranges;
+                    center = *octant.center();
+                    ranges = *octant.ranges();
                 },
             }
         }
 
         Ok(())
+    }
+
+    /// Iterate over all the leaves in the tree
+    fn leaves(&self) -> impl Iterator<Item = &Leaf<T>> {
+        self.tree.values().filter_map(|octant| match octant {
+            Octant::Leaf(leaf) => Some(leaf),
+            Octant::Node(_) => None,
+        })
     }
 }
 

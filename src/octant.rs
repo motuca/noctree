@@ -1,46 +1,59 @@
-pub enum OctantType<T> {
-    /// A node is an octant that has children
-    Node,
-
-    /// A leaf is an octant that has no children
-    Leaf {
-        points: Vec<[T; 3]>,
-    },
-}
-
-pub struct Octant<T> {
-    pub center: [T; 3],
-    pub ranges: [T; 3],
-    pub octant_type: OctantType<T>,
+pub enum Octant<T> {
+    Node(Node<T>),
+    Leaf(Leaf<T>),
 }
 
 impl<T> Octant<T> {
-    pub(crate) fn is_leaf(&self) -> bool {
-        match self.octant_type {
-            OctantType::Node => false,
-            OctantType::Leaf { .. } => true,
+    pub fn center(&self) -> &[T; 3] {
+        match self {
+            Octant::Node(node) => &node.center,
+            Octant::Leaf(leaf) => &leaf.center,
         }
     }
 
-    pub(crate) fn is_node(&self) -> bool {
-        match self.octant_type {
-            OctantType::Node => true,
-            OctantType::Leaf { .. } => false,
+    pub fn ranges(&self) -> &[T; 3] {
+        match self {
+            Octant::Node(node) => &node.ranges,
+            Octant::Leaf(leaf) => &leaf.ranges,
         }
     }
 
-    pub(crate) fn points(&self) -> Option<&Vec<[T; 3]>> {
-        match &self.octant_type {
-            OctantType::Node => None,
-            OctantType::Leaf { points } => Some(points),
+    pub fn is_leaf(&self) -> bool {
+        match self {
+            Octant::Node(_) => false,
+            Octant::Leaf(_) => true,
         }
     }
 
-    pub(crate) fn points_mut(&mut self) -> Option<&mut Vec<[T; 3]>> {
-        match &mut self.octant_type {
-            OctantType::Node => None,
-            OctantType::Leaf { points } => Some(points),
+    pub fn is_node(&self) -> bool {
+        match self {
+            Octant::Node(_) => true,
+            Octant::Leaf(_) => false,
         }
     }
 
+    pub fn points(&self) -> Option<&Vec<[T; 3]>> {
+        match self {
+            Octant::Node(_) => None,
+            Octant::Leaf(leaf) => Some(&leaf.points),
+        }
+    }
+
+    pub fn points_mut(&mut self) -> Option<&mut Vec<[T; 3]>> {
+        match self {
+            Octant::Node(_) => None,
+            Octant::Leaf(leaf) => Some(&mut leaf.points),
+        }
+    }
+}
+
+pub struct Node<T> {
+    pub center: [T; 3],
+    pub ranges: [T; 3],
+}
+
+pub struct Leaf<T> {
+    pub center: [T; 3],
+    pub ranges: [T; 3],
+    pub points: Vec<[T; 3]>,
 }
