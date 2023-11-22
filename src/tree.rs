@@ -175,7 +175,7 @@ where
         })
     }
 
-    pub fn push(&mut self, point: [T; 3], data: U) -> Result<(), OutOfRangeError> {
+    pub fn push(&mut self, point: [T; 3], data: U) -> Result<Id<N>, OutOfRangeError> {
         if self
             .ranges
             .iter()
@@ -232,7 +232,7 @@ where
             level += 1;
         }
 
-        Ok(())
+        Ok(id)
     }
 
     /// Iterate over all the leaves in the tree

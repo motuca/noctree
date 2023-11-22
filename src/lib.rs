@@ -7,3 +7,4 @@ mod util;
 
 pub use octant::Leaf;
 pub use tree::Octree;
+pub use octant_id::Id;
