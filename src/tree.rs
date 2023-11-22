@@ -246,6 +246,13 @@ where
             Octant::Node(_) => None,
         })
     }
+
+    pub fn drain_leaves(self) -> impl Iterator<Item = Leaf<T, U>> {
+        self.tree.into_iter().filter_map(|(_, octant)| match octant {
+            Octant::Leaf(leaf) => Some(leaf),
+            Octant::Node(_) => None,
+        })
+    }
 }
 
 #[cfg(test)]
