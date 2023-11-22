@@ -48,6 +48,15 @@ fn signs_to_bits(x: Sign, y: Sign, z: Sign) -> u8 {
 }
 
 impl<const N: usize> Id<N> {
+    /// Create a new uninitialized ID
+    pub fn uninitialized() -> Self {
+        Self { bits: [0; N] }
+    }
+
+    pub fn is_uninitialized(&self) -> bool {
+        self.bits.iter().all(|&b| b == 0)
+    }
+
     /// Create a new ID at the root level
     pub fn root(x: Sign, y: Sign, z: Sign) -> Self {
         let mut bits = [0; N];
