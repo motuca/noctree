@@ -1,9 +1,9 @@
-pub enum Octant<T> {
+pub enum Octant<T, U> {
     Node(Node<T>),
-    Leaf(Leaf<T>),
+    Leaf(Leaf<T, U>),
 }
 
-impl<T> Octant<T> {
+impl<T, U> Octant<T, U> {
     pub fn center(&self) -> &[T; 3] {
         match self {
             Octant::Node(node) => &node.center,
@@ -39,7 +39,7 @@ impl<T> Octant<T> {
     //     }
     // }
 
-    pub fn points_mut(&mut self) -> Option<&mut Vec<[T; 3]>> {
+    pub fn points_mut(&mut self) -> Option<&mut Vec<([T; 3], U)>> {
         match self {
             Octant::Node(_) => None,
             Octant::Leaf(leaf) => Some(&mut leaf.points),
@@ -52,8 +52,8 @@ pub struct Node<T> {
     pub ranges: [T; 3],
 }
 
-pub struct Leaf<T> {
+pub struct Leaf<T, U> {
     pub center: [T; 3],
     pub ranges: [T; 3],
-    pub points: Vec<[T; 3]>,
+    pub points: Vec<([T; 3], U)>,
 }
