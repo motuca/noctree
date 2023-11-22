@@ -175,7 +175,11 @@ where
         })
     }
 
-    pub fn push(&mut self, point: [T; 3], data: U) -> Result<Id<N>, OutOfRangeError> {
+    /// Push a point into the octree
+    /// 
+    /// Pushing a new point may result in splitting the octants to finer levels,
+    /// so the octant ID of the point may change.
+    pub fn push(&mut self, point: [T; 3], data: U) -> Result<(), OutOfRangeError> {
         if self
             .ranges
             .iter()
@@ -232,7 +236,7 @@ where
             level += 1;
         }
 
-        Ok(id)
+        Ok(())
     }
 
     /// Iterate over all the leaves in the tree
