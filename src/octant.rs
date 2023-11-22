@@ -47,11 +47,13 @@ impl<T, U> Octant<T, U> {
     }
 }
 
+#[derive(Debug)]
 pub struct Node<T> {
     pub center: [T; 3],
     pub ranges: [T; 3],
 }
 
+#[derive(Debug)]
 pub struct Leaf<T, U> {
     pub center: [T; 3],
     pub ranges: [T; 3],
