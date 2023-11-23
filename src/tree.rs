@@ -155,7 +155,8 @@ where
         + Half
         + Abs
         + NonNegative
-        + Copy,
+        + Copy
+        + std::fmt::Debug,
 {
     pub fn new(
         center: [T; 3],
@@ -187,6 +188,9 @@ where
             .zip(point.iter())
             .any(|((r, c), p)| Abs::abs(p) - Abs::abs(c) > r.half())
         {
+            println!("Point: {:?}", point);
+            println!("Center: {:?}", self.center);
+            println!("Ranges: {:?}", self.ranges);
             return Err(OutOfRangeError);
         }
 
