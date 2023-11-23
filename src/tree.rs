@@ -341,4 +341,27 @@ mod tests {
         assert!(leaves.len() > 0);
         // println!("# Leaves: {}", leaves.len());
     }
+
+    #[test]
+    fn time_pushing_large_number_of_points() {
+        let mut tree = Octree::<_, (), MAX_DEPTH>::new(CENTER, RANGES, THRESHOLD).unwrap();
+
+        let num_points = 1_000_000;
+        let mut rng = rand::thread_rng();
+        let mut points = Vec::new();
+        for _ in 0..num_points {
+            let x = rng.gen_range(-HALF_RANGE..HALF_RANGE);
+            let y = rng.gen_range(-HALF_RANGE..HALF_RANGE);
+            let z = rng.gen_range(-HALF_RANGE..HALF_RANGE);
+            let point = [x, y, z];
+            points.push(point);
+        }
+
+        let start = std::time::Instant::now();
+        for point in points {
+            tree.push(point, ()).unwrap();
+        }
+        let end = std::time::Instant::now();
+        println!("Time to push {:?} points: {:?}", num_points, end - start);
+    }
 }
